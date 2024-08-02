@@ -1,64 +1,74 @@
-import { Suspense, lazy, useEffect} from 'react'
-import { Route, Routes } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
-import { refreshUser } from 'redux/auth/operations';
-import { ThemeProvider } from 'styled-components';
-import { Layout } from "components/Layout/Layout";
-import AuthUserForm from 'components/LoginForm/Container/Index';
-import { useAuth } from 'hook';
-import { RestrictedRoute } from 'components/RestrictedRoute/RestrictedRoute';
-import { PrivateRoute } from 'components/PrivateRoute.js/PrivateRoute';
-import { darkTheme, lightTheme } from 'components/styleTheme/theme';
-import { selectTheme } from 'redux/userTheme/slice';
-import { setMainStyles } from 'components/styleTheme/setMainStyles';
-import { Loader } from 'components/Loader/Loader';
+import { useEffect, lazy, Suspense} from 'react';
+import { Navigate, Route, Routes } from 'react-router-dom';
+import PrivateRoute from 'routes/PrivatRoutes';
+import PublicRoute from 'routes/PublicRoutes';
+import { authOperations, authSelectors } from 'redux/auth';
+import Loader from 'components/Loader';
+import AppBar from 'components/AppBar';
+import { ToastContainer } from 'react-toastify';
 
+const PageHome = lazy(() => import('pages/PageHome'));
+const PageRegistration = lazy(() => import('pages/PageRegistration'));
+const PageLogin = lazy(() => import('pages/PageLogin'));
+const PageContacts = lazy(() => import('pages/PageContacts'));
 
-
-
-const Home = lazy(() => import('../../Pages/Home'));
-const ContactDetails = lazy(() => import('../../Pages/ContactDetails/ContactDetails'));
-const PhoneView = lazy(() => import('../../Pages/PhoneView/PhoneView'));
-const ContactEdit = lazy(() => import('../../Pages/ContactEdit/ContactEdit'));
-const AddContacts = lazy(() => import('../../Pages/AddContacts/AddContacts'));
-const NotFound = lazy(() => import('../../Pages/NotFound/NotFound'));
-
-export const App = () => {
-
+const App = () => {
   const dispatch = useDispatch();
-  const { isRefreshing } = useAuth();
-  const userTheme = useSelector(selectTheme);
+  const isFetchingCurrentUser = useSelector(authSelectors.getIsFetchingCurrent);
 
   useEffect(() => {
-    dispatch(refreshUser());
+    dispatch(authOperations.fetchCurrentUser());
   }, [dispatch]);
 
-    useEffect(() => {
-    setMainStyles(userTheme);
-    }, [userTheme]);
-  
+  return (
+    <>
+      {!isFetchingCurrentUser && (
+        <>
+          <AppBar />
+          <Suspense fallback={<Loader />}>
+            <Routes>
+              <Route
+                path="/"
+                exact
+                element={
+                  <PublicRoute>
+                    <PageHome />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="register"
+                element={
+                  <PublicRoute redirectTo="/contacts" restricted>
+                    <PageRegistration />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="login"
+                element={
+                  <PublicRoute redirectTo="/contacts" restricted>
+                    < PageLogin />
+                  </PublicRoute>
+                }
+              />
+              <Route
+                path="contacts"
+                element={
+                  <PrivateRoute>
+                    <PageContacts />
+                  </PrivateRoute>
+                }
+              />
+              <Route path="*" element={<Navigate to="/" />} />              
+            </Routes>
+          </Suspense>
+          <ToastContainer autoClose={3700} position="top-center" />
+        </>
+      )}
+    </>
+  );
+};
 
-
-  return (<ThemeProvider theme={userTheme === 'dark' ? darkTheme : lightTheme}>
-    { isRefreshing ? (<Loader/>) : (
-      <>
-       <Suspense fallback={<Loader/>}>  {/* To load Page 404*/}
-          <Routes>
-              <Route path="/" element={ <Layout /> }>
-                <Route index element={ <PrivateRoute component={ <Home /> } redirectTo="/login" /> } />
-                <Route path="contact/:id" element={ <PrivateRoute component={ <ContactDetails /> } redirectTo="/login" /> } >
-                  <Route index element={ <PhoneView /> } />
-                  <Route path="edit" element={ <ContactEdit /> } />
-                </Route>
-                <Route path="addContact" element={ <PrivateRoute component={ <AddContacts /> } redirectTo="/login" /> } />
-                <Route path="login" element={ <RestrictedRoute component={ <AuthUserForm /> } redirectTo="/" /> } />
-              </Route>
-            <Route path='*' element={ <NotFound/>} />
-        
-          </Routes>
-       </Suspense>
-      </>
-    ) }
-    </ThemeProvider>)
-
-}
+export default App;
