@@ -1,2 +1,3 @@
-# PHONE BOOK 
-**Phone book based on personal backend using mockapi.io UI service. Authentication, authorization is implemented. It is possible to work with a private collection of contacts.**
+# Phonebook
+
+Phonebook application with the ability to register users and work with private collections of contacts.
