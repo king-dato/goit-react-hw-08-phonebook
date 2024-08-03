@@ -18,10 +18,7 @@ const NotFound = () => {
             </ListItem>
           </List>
 
-          <Text>
-            WELCOME!!
-            <span>To Yhanz Phonebook </span>
-          </Text>
+          <Text>WELCOME!!</Text>
         </Wrapper>
       </Container>
     </main>
